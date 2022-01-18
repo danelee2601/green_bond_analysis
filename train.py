@@ -43,7 +43,6 @@ if __name__ == '__main__':
     trainer = pl.Trainer(logger=wandb_logger,
                          checkpoint_callback=False,
                          callbacks=[LearningRateMonitor(logging_interval='epoch')],
-                         **config['trainer_params'],
-                         )
+                         **config['trainer_params'],)
     trainer.fit(train_plm, train_dataloaders=train_data_loader, val_dataloaders=test_data_loader)
     wandb.finish()
