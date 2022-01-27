@@ -15,8 +15,10 @@ import torch.nn as nn
 #                          )
 
 def simplenet():
-    return nn.Sequential(nn.Conv1d(1, 64, kernel_size=7, stride=2),
-                         nn.MaxPool1d(4, stride=2),
+    return nn.Sequential(nn.Conv1d(1, 64, kernel_size=3, stride=2),
+                         nn.GELU(),
+                         nn.Conv1d(64, 64, kernel_size=3, stride=2),
+                         nn.GELU(),
                          nn.AdaptiveAvgPool1d(1),
                          nn.Flatten(start_dim=-2),
                          )

@@ -8,7 +8,8 @@ class Classifier(nn.Module):
     """
     def __init__(self, in_size: int, out_size: int):
         super(Classifier, self).__init__()
-        self.clf = nn.Linear(in_size, out_size)
+        self.clf = nn.Sequential(nn.Linear(in_size, out_size),)
 
     def forward(self, x: Tensor) -> Tensor:
+
         return self.clf(x)

@@ -3,7 +3,8 @@ from torch.utils.data import DataLoader
 import numpy as np
 
 from preprocessing.augmentations import augmentations
-from preprocessing.preprocess import GBVBDataset
+# from preprocessing.preprocess import GBVBDataset
+from preprocessing.preprocess2 import GBVBDataset
 from utils.types import *
 
 
@@ -33,7 +34,7 @@ def build_data_pipeline(cf: dict) -> Tuple[DataLoader, DataLoader]:
     train_data_loader = DataLoader(train_dataset,
                                    batch_size=batch_size,
                                    shuffle=True,
-                                   drop_last=False,  # we don't have many GB samples
+                                   drop_last=True,  # we don't have many GB samples
                                    num_workers=num_workers,
                                    pin_memory=True if num_workers > 0 else False)
     test_data_loader = DataLoader(test_dataset,

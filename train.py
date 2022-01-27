@@ -39,13 +39,13 @@ if __name__ == '__main__':
     # fit
     train_plm = TrainPLM(encoder, classifier, config,
                          n_train_samples=train_data_loader.dataset.__len__(),
-                         ratio_vb2gb=train_data_loader.dataset.ratio_vb2gb)
+                         GB_size=train_data_loader.dataset.GB_size,
+                         VB_size=train_data_loader.dataset.VB_size)
     wandb_logger = WandbLogger(project='ML_green_bond', name=None, config=config)
     trainer = pl.Trainer(logger=wandb_logger,
                          checkpoint_callback=False,
                          callbacks=[LearningRateMonitor(logging_interval='epoch')],
                          gradient_clip_val=config['exp_params']['gradient_clip_val'],
-                         gradient_clip_algorithm='value',
                          **config['trainer_params'],)
     trainer.fit(train_plm, train_dataloaders=train_data_loader, val_dataloaders=test_data_loader)
     wandb.finish()
