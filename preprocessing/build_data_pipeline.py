@@ -1,5 +1,6 @@
 from torchvision.transforms import Compose
 from torch.utils.data import DataLoader
+import numpy as np
 
 from preprocessing.augmentations import augmentations
 from preprocessing.preprocess import GBVBDataset
@@ -19,18 +20,20 @@ def build_data_pipeline(cf: dict) -> Tuple[DataLoader, DataLoader]:
     transforms = Compose(augs)
 
     # build datasets
+    np.random.seed(cf_data['rand_seed'])
     train_dataset = GBVBDataset(transform=transforms,
                                 kind='train',
-                                **cf)
+                                **cf_data)
+    np.random.seed(cf_data['rand_seed'])
     test_dataset = GBVBDataset(transform=transforms,
                                kind='test',
-                               **cf)
+                               **cf_data)
 
     # build data_loaders
     train_data_loader = DataLoader(train_dataset,
                                    batch_size=batch_size,
                                    shuffle=True,
-                                   drop_last=True,
+                                   drop_last=False,  # we don't have many GB samples
                                    num_workers=num_workers,
                                    pin_memory=True if num_workers > 0 else False)
     test_data_loader = DataLoader(test_dataset,

@@ -13,12 +13,11 @@ from utils import load_yaml_param_settings
 from preprocessing.build_data_pipeline import build_data_pipeline
 from models import encoders, Classifier
 from pl_modules.train_plm import TrainPLM
-from utils import get_root_dir
+from utils import root_dir
 
 
 def load_args():
     parser = ArgumentParser()
-    root_dir = get_root_dir()
     parser.add_argument('--config', type=str, help="Path to the config data  file.",
                         default=root_dir.joinpath('configs', 'config.yaml'))
     return parser.parse_args()
@@ -38,11 +37,15 @@ if __name__ == '__main__':
     classifier = Classifier(**config['clf_param'])
 
     # fit
-    train_plm = TrainPLM(encoder, classifier, config, n_train_samples=train_data_loader.dataset.__len__())
+    train_plm = TrainPLM(encoder, classifier, config,
+                         n_train_samples=train_data_loader.dataset.__len__(),
+                         ratio_vb2gb=train_data_loader.dataset.ratio_vb2gb)
     wandb_logger = WandbLogger(project='ML_green_bond', name=None, config=config)
     trainer = pl.Trainer(logger=wandb_logger,
                          checkpoint_callback=False,
                          callbacks=[LearningRateMonitor(logging_interval='epoch')],
+                         gradient_clip_val=config['exp_params']['gradient_clip_val'],
+                         gradient_clip_algorithm='value',
                          **config['trainer_params'],)
     trainer.fit(train_plm, train_dataloaders=train_data_loader, val_dataloaders=test_data_loader)
     wandb.finish()

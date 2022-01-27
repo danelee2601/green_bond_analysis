@@ -1,5 +1,5 @@
 import yaml
-from .get_root_dir import get_root_dir
+from .get_root_dir import root_dir
 
 
 def load_yaml_param_settings(yaml_fname: str):
