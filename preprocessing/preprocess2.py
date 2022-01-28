@@ -98,17 +98,15 @@ class GBVBDataset(Dataset):
         return VB_ticker
 
     def _scale_ts(self, ts):
-        # ts = (ts - np.mean(ts)) / np.std(ts + 1e-4)  # z-norm
-        # ts = np.arcsinh(np.arcsinh(ts))
         ts = np.arcsinh(ts)
         min_, max_ = np.min(ts), np.max(ts)
 
         if (max_ - min_) < 1e-1:
             pass
         else:
-            # ts = (ts - min_) / (max_ - min_) - 0.5
-            ts = (ts - np.mean(ts)) / np.std(ts + 1e-4)
-            ts = np.arcsinh(ts)
+            ts = (ts - min_) / (max_ - min_)
+            # ts = (ts - np.mean(ts)) / np.std(ts + 1e-4)
+            # ts = np.arcsinh(ts)
         return ts
 
     def _clip_timeseries(self, ts):

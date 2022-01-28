@@ -1,20 +1,20 @@
 data:
   ts_len: 100
-  test_ratio: 0.2
-  batch_size: 128 #512 #32
+  test_ratio: 0.5
+  batch_size: 128
   num_workers: 0
   rand_seed: 0
   augmentations:
     -
 
 enc_param:
-  name: 'ViT'
-  out_size_enc: 128
-  proj_hid: 1024
-  proj_out: 1024
+  name: 'resnet18'
+  out_size_enc: 512
+  proj_hid: 2048
+  proj_out: 2048
 
 clf_param:
-  in_size: 128
+  in_size: 512
   out_size: 2
 
 vibcreg:
@@ -25,8 +25,8 @@ vibcreg:
 loss_weight:
   use_class_weight: True
   label_smoothing: 0.
-  w_vibcreg: 0. #1.
   w_clf: 1.
+  w_vibcreg: 0.1
 
 
 exp_params:
@@ -38,4 +38,4 @@ exp_params:
 trainer_params:
   gpus:
     - 0
-  max_epochs: 50
+  max_epochs: 200 #50

@@ -243,6 +243,7 @@ class ResNet(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+        # print('x.shape:', x.shape)
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
@@ -410,13 +411,36 @@ if __name__ == '__main__':
     # toy dataset
     batch_size = 32
     in_channels = 1
-    L = 1000  # length
+    L = 300  # length
     x = torch.rand(batch_size, in_channels, L)
+    x.requires_grad = True
 
     # build model
-    model = resnet_small()
+    model = resnet18()
     print(model)
+
+    # register hook to check grad
+    gradients = []
+    def save_gradient(module, input, output):
+        if not hasattr(output, "requires_grad") or not output.requires_grad:
+            # You can only register hooks on tensor requires grad.
+            return
+
+        # Gradients are computed in reverse order
+        def _store_grad(grad):
+            global gradients
+            print('grad.shape:', grad.shape)
+            gradients = [grad.cpu().detach()] + gradients
+
+        output.register_hook(_store_grad)
+
+    model.layer4[-1].register_forward_hook(save_gradient)
 
     # forward
     out = model(x)
     print(out.shape)
+
+    # backward
+    loss = out.mean()
+    print(loss)
+    loss.backward()

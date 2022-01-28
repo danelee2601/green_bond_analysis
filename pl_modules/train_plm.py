@@ -68,9 +68,9 @@ class TrainPLM(pl.LightningModule):
         label = label.reshape(-1)
 
         # pull between `GB_ts` and `closest_VB_ts` (regression)
-        # y_gb, z_gb = self.vibcreg(GB_ts)
-        # y_vb, z_vb = self.vibcreg(closest_VB_ts)
-        # vibcreg_loss = self.vibcreg.loss_function(z_gb, z_vb, self.config['vibcreg'], loss_hist)
+        y_gb, z_gb = self.vibcreg(GB_ts)
+        y_vb, z_vb = self.vibcreg(closest_VB_ts)
+        vibcreg_loss = self.vibcreg.loss_function(z_gb, z_vb, self.config['vibcreg'], loss_hist)
 
         # classify MR_ts (classification)
         out = self.model(MR_ts)
@@ -80,9 +80,9 @@ class TrainPLM(pl.LightningModule):
         loss_hist['clf_loss'] = clf_loss
 
         # total loss
-        # loss = (self.config['loss_weight']['w_vibcreg'] * vibcreg_loss) + \
-        #        (self.config['loss_weight']['w_clf'] * clf_loss)
-        loss = (self.config['loss_weight']['w_clf'] * clf_loss)
+        loss = (self.config['loss_weight']['w_vibcreg'] * vibcreg_loss) + \
+               (self.config['loss_weight']['w_clf'] * clf_loss)
+        # loss = (self.config['loss_weight']['w_clf'] * clf_loss)
         loss_hist['loss'] = loss
 
         # metrics
@@ -114,9 +114,9 @@ class TrainPLM(pl.LightningModule):
         label = label.reshape(-1)
 
         # pull between `GB_ts` and `closest_VB_ts` (regression)
-        # y_gb, z_gb = self.vibcreg(GB_ts)
-        # y_vb, z_vb = self.vibcreg(closest_VB_ts)
-        # vibcreg_loss = self.vibcreg.loss_function(z_gb, z_vb, self.config['vibcreg'], loss_hist)
+        y_gb, z_gb = self.vibcreg(GB_ts)
+        y_vb, z_vb = self.vibcreg(closest_VB_ts)
+        vibcreg_loss = self.vibcreg.loss_function(z_gb, z_vb, self.config['vibcreg'], loss_hist)
 
         # classify MR_ts (classification)
         out = self.model(MR_ts)
@@ -124,9 +124,9 @@ class TrainPLM(pl.LightningModule):
         loss_hist['clf_loss'] = clf_loss
 
         # total loss
-        # loss = (self.config['loss_weight']['w_vibcreg'] * vibcreg_loss) + \
-        #        (self.config['loss_weight']['w_clf'] * clf_loss)
-        loss = (self.config['loss_weight']['w_clf'] * clf_loss)
+        loss = (self.config['loss_weight']['w_vibcreg'] * vibcreg_loss) + \
+               (self.config['loss_weight']['w_clf'] * clf_loss)
+        # loss = (self.config['loss_weight']['w_clf'] * clf_loss)
         loss_hist['loss'] = loss
 
         # metrics

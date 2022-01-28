@@ -80,7 +80,7 @@ class Transformer(nn.Module):
 class ViT(nn.Module):
     def __init__(self, *,
                  input_length: int = 100,
-                 patch_size: int = 20,
+                 patch_size: int = 10,
                  num_classes: int = 2,
                  dim: int = 128,
                  depth: int = 6,
