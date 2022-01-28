@@ -15,10 +15,12 @@ class GBVBDataset(Dataset):
                  transform: Compose = None,
                  kind: str = 'train',
                  ts_len_threshold: int = 10,
+                 output_aux_info: bool = False,
                  **kwargs):
         super().__init__()
         self.transform = transform
         self.ts_len = ts_len
+        self.output_aux_info = output_aux_info
 
         self.GB_tickers = self._get_tickers('GB')  # obtained based on fnames in the corresponding directory
         self.VB_tickers = self._get_tickers('VB')  # obtained based on fnames in the corresponding directory
@@ -98,7 +100,6 @@ class GBVBDataset(Dataset):
         return VB_ticker
 
     def _scale_ts(self, ts):
-        ts = np.arcsinh(ts)
         min_, max_ = np.min(ts), np.max(ts)
 
         if (max_ - min_) < 1e-1:
@@ -107,6 +108,7 @@ class GBVBDataset(Dataset):
             ts = (ts - min_) / (max_ - min_)
             # ts = (ts - np.mean(ts)) / np.std(ts + 1e-4)
             # ts = np.arcsinh(ts)
+        # ts = np.arcsinh(ts)
         return ts
 
     def _clip_timeseries(self, ts):
@@ -165,7 +167,11 @@ class GBVBDataset(Dataset):
         MR_ts = torch.from_numpy(MR_ts).float()
         label = torch.Tensor([label]).long()
 
-        return (GB_ts, closest_VB_ts), (MR_ts, label)
+        if self.output_aux_info:
+            aux_info = (GB_ticker, closest_VB_ticker)
+            return (GB_ts, closest_VB_ts), (MR_ts, label), aux_info
+        else:
+            return (GB_ts, closest_VB_ts), (MR_ts, label)
 
     def __len__(self):
         return self._len
@@ -185,7 +191,7 @@ if __name__ == '__main__':
     os.chdir(root_dir)
     print(os.getcwd())
 
-    dataset = GBVBDataset(100, 0.2, kind='train')
+    dataset = GBVBDataset(300, 0.2, kind='train')
     data_loader = DataLoader(dataset, batch_size=32, shuffle=True, drop_last=True)
 
     # fetch a batch
@@ -199,33 +205,16 @@ if __name__ == '__main__':
     print()
 
     # plot
-    # n_samples = 10
-    # for i in range(n_samples):
-    #     batch_idx = i
-    #     channel_idx = 0
-    #     plt.figure(figsize=(2 * 3, 8))
-    #     plt.subplot(3, 1, 1)
-    #     plt.plot(GB_ts[batch_idx, channel_idx, :])
-    #     plt.subplot(3, 1, 2)
-    #     plt.plot(closest_VB_ts[batch_idx, channel_idx, :])
-    #     plt.subplot(3, 1, 3)
-    #     plt.plot(MR_ts[batch_idx, channel_idx, :])
-    #     plt.show()
-
-    # validity check
-    model = nn.Sequential(nn.Conv1d(1, 64, kernel_size=3, stride=2),
-                          nn.GELU(),
-                          nn.Conv1d(64, 64, kernel_size=3, stride=2),
-                          nn.GELU(),
-                          nn.AdaptiveAvgPool1d(1),
-                          nn.Flatten(start_dim=-2),
-                          nn.Linear(64, 2)
-                          )
-    n_epochs = 20
-    criterion = nn.CrossEntropyLoss()
-    for batch in data_loader:
-        (GB_ts, closest_VB_ts), (MR_ts, label) = batch
-        label = label.reshape(-1)
-        out = model(MR_ts)
-        loss = criterion(out, label)
-        print(loss)
+    n_samples = 10
+    for i in range(n_samples):
+        batch_idx = i
+        channel_idx = 0
+        plt.figure(figsize=(6, 4))
+        plt.subplot(3, 1, 1)
+        plt.plot(GB_ts[batch_idx, channel_idx, :])
+        plt.subplot(3, 1, 2)
+        plt.plot(closest_VB_ts[batch_idx, channel_idx, :])
+        plt.subplot(3, 1, 3)
+        plt.plot(MR_ts[batch_idx, channel_idx, :])
+        plt.show()
+        plt.tight_layout()

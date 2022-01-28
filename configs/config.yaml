@@ -1,7 +1,7 @@
 data:
-  ts_len: 100
-  test_ratio: 0.5
-  batch_size: 128
+  ts_len: 300
+  test_ratio: 0.1
+  batch_size: 512
   num_workers: 0
   rand_seed: 0
   augmentations:
@@ -26,7 +26,7 @@ loss_weight:
   use_class_weight: True
   label_smoothing: 0.
   w_clf: 1.
-  w_vibcreg: 0.1
+  w_vibcreg: 0. #0.1
 
 
 exp_params:

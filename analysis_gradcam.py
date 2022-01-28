@@ -57,45 +57,41 @@ if __name__ == '__main__':
     # That are, for example, combinations of categories, or specific outputs in a non standard model.
 
     # get data
-    dataset = GBVBDataset(757, 0.2, kind='train')
+    dataset = GBVBDataset(757, 0.2, kind='train', output_aux_info=True)
     data_loader = DataLoader(dataset, batch_size=1, shuffle=False, drop_last=True)
-    (GB_ts, closest_VB_ts), (MR_ts, label) = next(iter(data_loader))
+    (GB_ts, closest_VB_ts), (MR_ts, label), (GB_ticker, closest_VB_ticker) = next(iter(data_loader))
     print('GB_ts.shape:', GB_ts.shape)
     print('closest_VB_ts.shape:', closest_VB_ts.shape)
     print('MR_ts.shape:', MR_ts.shape)
     print('label.shape:', label.shape)
 
-    # You can also pass aug_smooth=True and eigen_smooth=True, to apply smoothing.
-    # targets = [ClassifierOutputTarget(l) for l in label.reshape(-1)]
+    # compute CAM
     targets = [ClassifierOutputTarget(0), ClassifierOutputTarget(1)]
     input = torch.concat((closest_VB_ts, GB_ts), dim=0)
     grayscale_cam = cam(input_tensor=input, targets=targets)
+    print('grayscale_cam:\n', grayscale_cam)
     print('grayscale_cam.shape:', grayscale_cam.shape)
-    print('np.sum(grayscale_cam):', np.sum(grayscale_cam))
 
     # get a sample
     batch_idx = 0
     channel_idx = 0
     VB_ts_ = closest_VB_ts[batch_idx][channel_idx].numpy()
     GB_ts_ = GB_ts[batch_idx][channel_idx].numpy()
-    # label_ = label[batch_idx].numpy()
-    # grayscale_cam_ = grayscale_cam[batch_idx]
-    # print('grayscale_cam_:', grayscale_cam_)
-    # print('label_:', label_)
-    # str_label_ = 'VB' if label_ == 0 else 'GB'
-    # print('str_label_:', str_label_)
 
     # visualization
     ts_len = GB_ts_.shape[-1]
     x = np.arange(ts_len)
-    plt.figure(figsize=(10, 3))
+    plt.figure(figsize=(10, 4))
     for i, ts in enumerate([VB_ts_, GB_ts_]):
         plt.subplot(2, 1, i+1)
-        plt.title('VB' if i == 0 else 'GB')
-        plt.plot(x, ts)
-        plt.scatter(x, ts,
+        plt.title(f'VB: {closest_VB_ticker}' if i == 0 else f'GB: {GB_ticker}')
+        plt.plot(x, np.sinh(ts))
+        plt.scatter(x, np.sinh(ts),
                     s=grayscale_cam[i]*30,
                     c=grayscale_cam[i],
                     cmap='coolwarm')
         plt.tight_layout()
     plt.show()
+
+
+
