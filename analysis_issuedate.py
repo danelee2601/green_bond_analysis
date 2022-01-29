@@ -12,29 +12,25 @@ def run(target_GB_ticker):
     # search for a target ticker
     issue_date = df[df['Exchange Ticker'] == target_GB_ticker]['Issue Date']
     print('issue_date:\n', issue_date, '\n')
-    if issue_date.shape[0] > 1:
-        issue_date = issue_date.iloc[[0]]
-        print('corrected) issue_date:\n', issue_date, '\n')
 
-    # fetch corresponding timeseries
     ts = pd.read_csv(root_dir.joinpath('dataset', 'dataset_GB', f'{target_GB_ticker}-ts.csv'))
     ts_volat = ts['High'] - ts['Low']
     ts_date = ts['Date']
-    print('ts_date:', ts_date)
-    target_ts_date = ts_date.apply(lambda x: x == issue_date).values.astype(int)
-    print(np.sum(target_ts_date))
     plt.figure(figsize=(10, 3))
     plt.title(f'{target_GB_ticker}')
-    plt.plot(ts_date, ts_volat)
-    plt.scatter(ts_date, ts_volat,
-                c=target_ts_date,
-                s=target_ts_date * 100,
-                cmap='coolwarm',
-                )
+    for i in range(issue_date.shape[0]):
+        issue_date_ = issue_date.iloc[[i]]
+        target_ts_date = ts_date.apply(lambda x: x == issue_date_).values.astype(int)
+        plt.plot(ts_date, ts_volat, alpha=0.8) if i == 0 else None
+        plt.scatter(ts_date, ts_volat,
+                    c=target_ts_date,
+                    s=target_ts_date * 100,
+                    cmap='coolwarm',
+                    )
     plt.xticks(ts_date[::20], rotation=90)
     plt.tight_layout()
     plt.show()
 
 
 if __name__ == '__main__':
-    run(target_GB_ticker='ENPH')
+    run(target_GB_ticker='AGR')

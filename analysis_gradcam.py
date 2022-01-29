@@ -22,7 +22,35 @@ def load_args():
     return parser.parse_args()
 
 
+dataset = None
+
+
+def get_GB_VB_pairs(GB_ticker: str = None):
+    if not GB_ticker:
+        idx_pull = np.random.randint(0, len(dataset.GB_tickers))
+        GB_ticker = dataset.GB_tickers[idx_pull]
+    GB_ts = pd.read_csv(os.path.join('dataset', 'dataset_GB', f'{GB_ticker}-ts.csv'))
+
+    closest_VB_ticker = dataset._get_closest_VB_ticker(GB_ticker)
+    closest_VB_ts = pd.read_csv(os.path.join('dataset', 'dataset_VB', f'{closest_VB_ticker}-ts.csv'))
+
+    GB_ts = (GB_ts['High'] - GB_ts['Low']).values
+    closest_VB_ts = (closest_VB_ts['High'] - closest_VB_ts['Low']).values
+
+    GB_ts = dataset._clip_timeseries(GB_ts)
+    closest_VB_ts = dataset._clip_timeseries(closest_VB_ts)
+
+    GB_ts = dataset._scale_ts(GB_ts)
+    closest_VB_ts = dataset._scale_ts(closest_VB_ts)
+    return (GB_ts, closest_VB_ts), (GB_ticker, closest_VB_ticker)
+
+
 if __name__ == '__main__':
+    import os
+    import pandas as pd
+    import torch
+    import numpy as np
+
     # load config(s)
     args = load_args()
     config = load_yaml_param_settings(args.config)
@@ -31,7 +59,7 @@ if __name__ == '__main__':
     encoder = encoders['resnet18']()
     classifier = Classifier(**config['clf_param'])
     model = nn.Sequential(encoder, classifier)
-    ckpt_path = 'checkpoints/resnet18_ssl-ep_200.ckpt'
+    ckpt_path = 'checkpoints/clf-ep_200.ckpt'
     model.load_state_dict(torch.load(ckpt_path, map_location='cpu')['model_state_dict'])
     model.eval()
     # print('model:\n', model)
@@ -44,33 +72,49 @@ if __name__ == '__main__':
     # Construct the CAM object once, and then re-use it on many images:
     cam = GradCAM(model=model, target_layers=target_layers, use_cuda=True)
 
-    # You can also use it within a with statement, to make sure it is freed,
-    # In case you need to re-create it inside an outer loop:
-    # with GradCAM(model=model, target_layers=target_layers, use_cuda=args.use_cuda) as cam:
-    #   ...
-
-    # We have to specify the target we want to generate
-    # the Class Activation Maps for.
-    # If targets is None, the highest scoring category
-    # will be used for every image in the batch.
-    # Here we use ClassifierOutputTarget, but you can define your own custom targets
-    # That are, for example, combinations of categories, or specific outputs in a non standard model.
-
     # get data
-    dataset = GBVBDataset(757, 0.2, kind='train', output_aux_info=True)
-    data_loader = DataLoader(dataset, batch_size=1, shuffle=False, drop_last=True)
-    (GB_ts, closest_VB_ts), (MR_ts, label), (GB_ticker, closest_VB_ticker) = next(iter(data_loader))
-    print('GB_ts.shape:', GB_ts.shape)
-    print('closest_VB_ts.shape:', closest_VB_ts.shape)
-    print('MR_ts.shape:', MR_ts.shape)
-    print('label.shape:', label.shape)
+    ts_len = 757
+    dataset = GBVBDataset(ts_len, 0.1)
+    (GB_ts, closest_VB_ts), (GB_ticker, closest_VB_ticker) = \
+        get_GB_VB_pairs(GB_ticker='AGR')
+    GB_ts = torch.from_numpy(GB_ts[None, None, :]).float()
+    closest_VB_ts = torch.from_numpy(closest_VB_ts[None, None, :]).float()
+    print('GB_ts.shape:', GB_ts.shape)  # (B, 1, ts_len)
+    print('closest_VB_ts.shape:', closest_VB_ts.shape)  # (B, 1, ts_len)
 
-    # compute CAM
+    # compute CAM with a moving window
     targets = [ClassifierOutputTarget(0), ClassifierOutputTarget(1)]
-    input = torch.concat((closest_VB_ts, GB_ts), dim=0)
-    grayscale_cam = cam(input_tensor=input, targets=targets)
+    i = 0
+    ts_crop_len = 300
+    shift_rate = 0.5
+    grayscale_cam = np.zeros((2, ts_len))
+    count_cam = np.zeros((2, ts_len))
+    while True:
+        print(f'index: {i} - {i+ts_crop_len}')
+        closest_VB_ts_ = closest_VB_ts[:, :, i:i+ts_crop_len]  # (1, 1, ts_cro_len)
+        GB_ts_ = GB_ts[:, :, i:i+ts_crop_len]  # (1, 1, ts_cro_len)
+
+        closest_VB_ts_ = torch.from_numpy(dataset._scale_ts(closest_VB_ts_.numpy()))
+        GB_ts_ = torch.from_numpy(dataset._scale_ts(GB_ts_.numpy()))
+
+        input = torch.concat((closest_VB_ts_, GB_ts_), dim=0)
+        grayscale_cam_ = cam(input_tensor=input, targets=targets)
+
+        grayscale_cam[:, i:i+ts_crop_len] = grayscale_cam_
+        count_cam[:, i:i + ts_crop_len] += np.ones(grayscale_cam_.shape)
+
+        i = i + np.floor(ts_crop_len * shift_rate).astype(int)
+        if i >= ts_len:
+            break
+    grayscale_cam = grayscale_cam / count_cam
     print('grayscale_cam:\n', grayscale_cam)
     print('grayscale_cam.shape:', grayscale_cam.shape)
+
+    # targets = [ClassifierOutputTarget(0), ClassifierOutputTarget(1)]
+    # input = torch.concat((closest_VB_ts, GB_ts), dim=0)
+    # grayscale_cam = cam(input_tensor=input, targets=targets)
+    # print('grayscale_cam:\n', grayscale_cam)
+    # print('grayscale_cam.shape:', grayscale_cam.shape)
 
     # get a sample
     batch_idx = 0

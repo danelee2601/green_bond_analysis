@@ -124,6 +124,7 @@ class GBVBDataset(Dataset):
 
     def __getitem__(self, idx):
         # select one GB timeseries sample
+        # np.random.seed(self.rand_seed)
         idx_pull = np.random.randint(0, len(self.GB_tickers))
         GB_ticker = self.GB_tickers[idx_pull]
         GB_ts = pd.read_csv(os.path.join('dataset', 'dataset_GB', f'{GB_ticker}-ts.csv'))
