@@ -33,4 +33,4 @@ def run(target_GB_ticker):
 
 
 if __name__ == '__main__':
-    run(target_GB_ticker='AGR')
+    run(target_GB_ticker='TRN')

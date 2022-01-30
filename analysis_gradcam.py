@@ -59,7 +59,7 @@ if __name__ == '__main__':
     encoder = encoders['resnet18']()
     classifier = Classifier(**config['clf_param'])
     model = nn.Sequential(encoder, classifier)
-    ckpt_path = 'checkpoints/clf-ep_200.ckpt'
+    ckpt_path = 'checkpoints/clf_ssl-ep_200.ckpt'
     model.load_state_dict(torch.load(ckpt_path, map_location='cpu')['model_state_dict'])
     model.eval()
     # print('model:\n', model)
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     ts_len = 757
     dataset = GBVBDataset(ts_len, 0.1)
     (GB_ts, closest_VB_ts), (GB_ticker, closest_VB_ticker) = \
-        get_GB_VB_pairs(GB_ticker='AGR')
+        get_GB_VB_pairs(GB_ticker=None)  # GB_ticker='DG'
     GB_ts = torch.from_numpy(GB_ts[None, None, :]).float()
     closest_VB_ts = torch.from_numpy(closest_VB_ts[None, None, :]).float()
     print('GB_ts.shape:', GB_ts.shape)  # (B, 1, ts_len)
@@ -134,6 +134,7 @@ if __name__ == '__main__':
                     s=grayscale_cam[i]*30,
                     c=grayscale_cam[i],
                     cmap='coolwarm')
+        plt.xticks([])
         plt.tight_layout()
     plt.show()
 
